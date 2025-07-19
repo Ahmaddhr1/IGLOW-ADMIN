@@ -1,0 +1,92 @@
+const express = require("express");
+const { SerialPort } = require("serialport");
+const { format } = require("date-fns");
+const axios = require("axios");
+
+const app = express();
+const port = new SerialPort({ path: "COM4", baudRate: 19200 });
+
+app.get("/print/:id", async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    // Fetch order data
+    const response = await axios.get(
+      `https://daher-eight.vercel.app/api/orders/${id}`
+    );
+    if (response.status !== 200) {
+      return res.status(500).json({ error: "Failed to fetch order" });
+    }
+    const order = response.data;
+
+    // Build printable commands as strings with printer control codes
+    const commands = [];
+
+    // Printer commands
+    commands.push("\x1B\x40"); // Initialize printer
+    commands.push("\x1B\x61\x01"); // Align center
+    commands.push("Daher For Trading\n");
+    commands.push(`${format(new Date(order.createdAt), "yyyy-MM-dd HH:mm")}\n`);
+    commands.push("\n");
+
+    commands.push("\x1B\x61\x00"); // Align left
+    commands.push("Customer: " + (order.customer?.fullName || "N/A") + "\n");
+    commands.push("===============================\n");
+    commands.push("Name           Qty  Price  Total\n");
+    commands.push("-------------------------------\n");
+
+    // Products list
+    order.products.forEach((item) => {
+      const unitPrice = item.price ?? item.product?.price ?? 0;
+      const lineTotal = unitPrice * item.quantity;
+      const name = item.name.slice(0, 14).padEnd(14); // limit name to 14 chars
+      const qty = String(item.quantity).padStart(3);
+      const price = unitPrice.toFixed(2).padStart(6);
+      const total = lineTotal.toFixed(2).padStart(6);
+
+      commands.push(`${name}${qty} ${price} ${total}\n`);
+    });
+
+    commands.push("===============================\n");
+    commands.push(`Total: $${Number(order.total).toFixed(2).padStart(8)}\n`);
+    commands.push(
+      `Paid: $${Number(order.amountpaid || 0)
+        .toFixed(2)
+        .padStart(8)}\n`
+    );
+    commands.push(
+      `Remaining: $${Number(order.remainingBalance || 0)
+        .toFixed(2)
+        .padStart(5)}\n`
+    );
+    commands.push("===============================\n");
+
+    // Status with proper formatting
+    const statusText =
+      order.status === "paid"
+        ? "PAID"
+        : order.status === "partiallyPaid"
+        ? "PARTIALLY PAID"
+        : "PENDING";
+    commands.push(`STATUS: ${statusText}\n`);
+
+    commands.push("\x1B\x61\x01"); // Align center
+    commands.push("Thank you!\n");
+    commands.push("Powered By Ahmad Daher (76-522837)\n");
+    commands.push("\n");
+
+    commands.push("\x1B\x64\x02"); // Feed 2 lines
+    commands.push("\x1B\x69"); // Cut paper.
+
+    // Write commands to the printer sequentially
+    for (const cmd of commands) {
+      port.write(cmd);
+    }
+
+    res.json({ message: "Printing..." });
+  } catch (error) {
+    res.status(500).json({ error: "Print failed", details: error.message });
+  }
+});
+
+app.listen(3001, () => console.log("Server running on http://localhost:3001"));
