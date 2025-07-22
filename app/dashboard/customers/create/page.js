@@ -15,14 +15,12 @@ const AddCustomerPage = () => {
     fullName: "",
     phoneNumber: "",
     debt: "",
-    bigBottlesDebt: "",
-    smallBottlesDebt: "",
   });
 
   const handleChange = (e) => {
     const { name, value } = e.target;
 
-    const numericFields = ["phoneNumber", "debt", "bigBottlesDebt", "smallBottlesDebt"];
+    const numericFields = ["phoneNumber", "debt"];
     const cleanValue = numericFields.includes(name) ? value.replace(/\D/g, "") : value;
 
     setForm((prev) => ({
@@ -42,8 +40,6 @@ const AddCustomerPage = () => {
         fullName: "",
         phoneNumber: "",
         debt: "",
-        bigBottlesDebt: "",
-        smallBottlesDebt: "",
       });
       router.replace("/dashboard/customers")
     },
@@ -85,22 +81,6 @@ const AddCustomerPage = () => {
           placeholder="Debt"
           name="debt"
           value={form.debt}
-          onChange={handleChange}
-        />
-        <Input
-          type="text"
-          inputMode="numeric"
-          placeholder="Big Bottles Debt"
-          name="bigBottlesDebt"
-          value={form.bigBottlesDebt}
-          onChange={handleChange}
-        />
-        <Input
-          type="text"
-          inputMode="numeric"
-          placeholder="Small Bottles Debt"
-          name="smallBottlesDebt"
-          value={form.smallBottlesDebt}
           onChange={handleChange}
         />
         <Button type="submit" disabled={mutation.isPending}>

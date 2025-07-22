@@ -5,8 +5,6 @@ const customerSchema = new mongoose.Schema(
     fullName: { type: String, required: true },
     phoneNumber:{type:Number , unique:true,required: true},
     debt:{type:Number, default:0},
-    smallBottlesDebt:{type:Number, default:0 },
-    bigBottlesDebt:{type:Number, default:0},
     orders: {
         type:[mongoose.Types.ObjectId],
         ref:"Order",

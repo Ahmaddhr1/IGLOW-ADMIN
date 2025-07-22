@@ -13,8 +13,6 @@ import Loading from "@/components/Loading";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
 
-
-
 const EditCustomerPage = () => {
   const router = useRouter();
   const { id } = useParams();
@@ -25,8 +23,7 @@ const EditCustomerPage = () => {
     fullName: "",
     phoneNumber: "",
     debt: "",
-    bigBottlesDebt: "",
-    smallBottlesDebt: "",
+    orders: [],
   });
 
   // Fetch existing customer data (including orders)
@@ -46,23 +43,18 @@ const EditCustomerPage = () => {
         fullName: data.fullName || "",
         phoneNumber: data.phoneNumber || "",
         debt: data.debt?.toFixed(2) || "",
-        bigBottlesDebt: data.bigBottlesDebt || "",
-        smallBottlesDebt: data.smallBottlesDebt || "",
+        orders: data?.orders || [],
       });
     }
     if (isError) {
       toast.error("Failed to fetch customer.");
     }
+    console.log("Foormmmmmm",form)
   }, [data, isError]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    const numericFields = [
-      "phoneNumber",
-      "debt",
-      "bigBottlesDebt",
-      "smallBottlesDebt",
-    ];
+    const numericFields = ["phoneNumber", "debt"];
     const cleanValue = numericFields.includes(name)
       ? value.replace(/\D/g, "")
       : value;
@@ -120,7 +112,18 @@ const EditCustomerPage = () => {
           >
             Call him
           </a>
-          <Link href={`/dashboard/customers/${id}/orders`}><Button variant="outline"><Eye />View Orders</Button></Link>
+          {form.orders.length=== 0 ? (
+            <div className="text-orange-600 bg-orange-200 p-2 rounded-md">
+              Customer has No Orders
+            </div>
+          ) : (
+            <Link href={`/dashboard/customers/${id}/orders`}>
+              <Button variant="outline">
+                <Eye />
+                View Orders
+              </Button>
+            </Link>
+          )}
         </div>
 
         <Link href={`/dashboard/customers/${id}/addorder`}>
@@ -162,26 +165,6 @@ const EditCustomerPage = () => {
               placeholder="Debt"
               name="debt"
               value={form.debt}
-              onChange={handleChange}
-              className="mb-4"
-            />
-            <Label>Big Bottles Debt </Label>
-            <Input
-              type="text"
-              inputMode="numeric"
-              placeholder="Big Bottles Debt"
-              name="bigBottlesDebt"
-              value={form.bigBottlesDebt}
-              onChange={handleChange}
-              className="mb-4"
-            />
-            <Label>Small Bottles Debt</Label>
-            <Input
-              type="text"
-              inputMode="numeric"
-              placeholder="Small Bottles Debt"
-              name="smallBottlesDebt"
-              value={form.smallBottlesDebt}
               onChange={handleChange}
               className="mb-4"
             />

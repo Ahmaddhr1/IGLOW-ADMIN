@@ -5,6 +5,12 @@ const productSchema = new mongoose.Schema(
     name: { type: String, required: true },
     quantity: { type: Number },
     price: { type: Number },
+    initialPrice:{type: Number},
+    profit:{type: Number},
+    gender:{
+      type:String,
+      enum:['male','female']
+    },
     nbOfOrders: { type: Number ,default:0 },
   },
   { timestamps: true }
