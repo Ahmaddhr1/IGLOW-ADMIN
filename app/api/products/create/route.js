@@ -1,28 +1,74 @@
 import { connectToDB } from "@/lib/connectDb";
 import Product from "@/models/Products";
+import Category from "@/models/Category"; // import category model
 import { NextResponse } from "next/server";
 
-// CREATE a new product
 export async function POST(req) {
   await connectToDB();
+
   try {
-    const { name, quantity, price } = await req.json();
+    const {
+      name,
+      quantity,
+      price,
+      initialPrice,
+      profit,
+      gender,
+      category,
+      img,
+    } = await req.json();
 
-    if (!name || price == null) {
+    if (!name?.trim() || price == null || quantity == null ) {
       return NextResponse.json(
-        { error: "Name and price are required." },
+        { error: "Name, price, and quantity are required." },
         { status: 400 }
       );
     }
-    if(price <0 || quantity<0) {
+
+    const parsedQuantity = parseInt(quantity, 10);
+    const parsedPrice = parseFloat(price);
+    const parsedInitialPrice = parseFloat(initialPrice);
+    const parsedProfit = parseFloat(profit);
+
+    if (
+      isNaN(parsedPrice) ||
+      isNaN(parsedQuantity) ||
+      isNaN(parsedInitialPrice) ||
+      isNaN(parsedProfit)
+    ) {
       return NextResponse.json(
-        { error: "price and quantity cant be less than 0" },
+        { error: "Numeric values are not valid." },
         { status: 400 }
       );
     }
 
-    const product = new Product({ name, quantity, price });
+    if (parsedPrice < 0 || parsedQuantity < 0 || parsedInitialPrice < 0) {
+      return NextResponse.json(
+        { error: "Price, quantity, and initial price must be ≥ 0." },
+        { status: 400 }
+      );
+    }
+
+    // Create the product
+    const product = new Product({
+      name: name.trim(),
+      quantity: parsedQuantity,
+      price: parsedPrice,
+      initialPrice: parsedInitialPrice,
+      profit: parsedProfit,
+      gender,
+      category,
+      img,
+    });
+
     await product.save();
+
+    // If category is provided, push product._id to Category.products
+    if (category) {
+      await Category.findByIdAndUpdate(category, {
+        $push: { products: product._id },
+      });
+    }
 
     return NextResponse.json(product, { status: 201 });
   } catch (error) {

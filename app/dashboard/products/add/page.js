@@ -2,7 +2,7 @@
 
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import { Loader2 } from "lucide-react";
 import React, { useState } from "react";
@@ -10,14 +10,19 @@ import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { UploadButton } from "@uploadthing/react";
 
-// Dummy categories
-const dummyCategories = [
-  { _id: "1", name: "Shirts" },
-  { _id: "2", name: "Shoes" },
-];
+const fetchCategories = async () => {
+  const { data } = await axios.get("/api/categories");
+  return data;
+};
 
 const Page = () => {
   const router = useRouter();
+
+  const { data: categories, isLoading, isError } = useQuery({
+    queryKey: ["categories"],
+    queryFn: fetchCategories,
+  });
+
   const [form, setForm] = useState({
     name: "",
     quantity: "",
@@ -90,6 +95,16 @@ const Page = () => {
     }));
   };
 
+  // Validate that all required fields are filled and at least one image uploaded
+  const isFormValid =
+    form.name.trim() !== "" &&
+    form.quantity.trim() !== "" &&
+    form.price.trim() !== "" &&
+    form.initialPrice.trim() !== "" &&
+    form.gender.trim() !== "" &&
+    form.category.trim() !== "" &&
+    form.img.length > 0;
+
   return (
     <section className="section">
       <header className="flex items-center justify-between mb-4">
@@ -97,7 +112,12 @@ const Page = () => {
       </header>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-3 max-w-md">
-        <Input placeholder="Name" name="name" value={form.name} onChange={handleChange} />
+        <Input
+          placeholder="Name"
+          name="name"
+          value={form.name}
+          onChange={handleChange}
+        />
         <Input
           placeholder="Quantity"
           name="quantity"
@@ -129,6 +149,7 @@ const Page = () => {
           <option value="">Select Gender</option>
           <option value="male">Male</option>
           <option value="female">Female</option>
+          <option value="unisex">Uni-Sex</option>
         </select>
 
         <select
@@ -136,18 +157,23 @@ const Page = () => {
           value={form.category}
           onChange={handleChange}
           className="p-2 border rounded"
+          disabled={isLoading || isError}
         >
           <option value="">Select Category</option>
-          {dummyCategories.map((cat) => (
-            <option key={cat._id} value={cat._id}>
-              {cat.name}
-            </option>
-          ))}
+          {isLoading && <option>Loading categories...</option>}
+          {isError && <option>Error loading categories</option>}
+          {categories &&
+            categories.map((cat) => (
+              <option key={cat._id} value={cat._id}>
+                {cat.name}
+              </option>
+            ))}
         </select>
 
         {form.price && form.initialPrice && (
           <p className="text-sm text-green-600">
-            Estimated Profit: {(parseFloat(form.price) - parseFloat(form.initialPrice)).toFixed(2)}$
+            Estimated Profit:{" "}
+            {(parseFloat(form.price) - parseFloat(form.initialPrice)).toFixed(2)}$
           </p>
         )}
 
@@ -164,6 +190,8 @@ const Page = () => {
             onUploadError={(error) => {
               toast.error(`Upload failed: ${error.message}`);
             }}
+            multiple
+            accept="image/*"
           />
         </div>
 
@@ -178,7 +206,7 @@ const Page = () => {
           ))}
         </div>
 
-        <Button type="submit" disabled={mutation.isPending}>
+        <Button type="submit" disabled={mutation.isPending || !isFormValid}>
           {mutation.isPending ? (
             <span className="flex items-center gap-2">
               <Loader2 className="animate-spin h-4 w-4" />

@@ -9,7 +9,7 @@ const productSchema = new mongoose.Schema(
     profit: { type: Number },
     gender: {
       type: String,
-      enum: ["male", "female"],
+      enum: ["male", "female","unisex"],
     },
     category: {
       type: mongoose.Types.ObjectId,
