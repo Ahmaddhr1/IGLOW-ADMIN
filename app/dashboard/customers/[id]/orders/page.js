@@ -96,6 +96,7 @@ export default function CustomerOrdersTable() {
             <TableHead>Total</TableHead>
             <TableHead>Date</TableHead>
             <TableHead>Status</TableHead>
+            {/* <TableHead>Profit</TableHead> */}
             <TableHead className="text-center">Actions</TableHead>
           </TableRow>
         </TableHeader>
@@ -131,6 +132,7 @@ export default function CustomerOrdersTable() {
                       : "Pending"}
                   </span>
                 </TableCell>
+                {/* <TableCell>{order.profit}</TableCell> */}
                 <TableCell className="text-center">
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>

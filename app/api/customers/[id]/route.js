@@ -10,7 +10,7 @@ export async function GET(req, { params }) {
     const id = params.id;
     const customer = await Customer.findById(id).populate({
       path: "orders",
-      select:"total createdAt status",
+      select:"total createdAt status profit",
       populate: {
         path: "products",
         select: "name price ",

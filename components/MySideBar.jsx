@@ -75,7 +75,7 @@ export function MySideBar() {
         <div className="flex flex-col h-full">
           {/* Header */}
           <div className="p-4 flex justify-between items-center border-b border-gray-700">
-            {!isCollapsed && <h1 className="text-xl font-bold">Daher For Trading</h1>}
+            {!isCollapsed && <h1 className="text-xl font-bold">I Glow</h1>}
             <button
               onClick={toggleCollapse}
               className="p-2 rounded-lg hover:bg-primary hover:text-white duration-150"

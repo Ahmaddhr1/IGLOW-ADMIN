@@ -43,6 +43,9 @@ const orderSchema = new mongoose.Schema(
     remainingBalance: {
       type: Number,
     },
+    profit:{
+      type:Number
+    }
   },
   { timestamps: true }
 );

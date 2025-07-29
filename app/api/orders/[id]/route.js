@@ -81,13 +81,13 @@ export async function DELETE(request, { params }) {
   }
 }
 
-export async function POST(req, { params }) {
+export async function POST(req, { params }) { 
   await connectToDB();
 
   try {
     const customerId = params.id;
     const { products, total } = await req.json();
-    console.log(products);
+
     if (!products?.length) {
       return NextResponse.json(
         { message: "No products provided" },
@@ -97,6 +97,7 @@ export async function POST(req, { params }) {
 
     const enrichedProducts = [];
     const productUpdates = [];
+    let totalProfit = 0; // Track total profit
 
     for (const item of products) {
       const product = await Product.findById(item.productId);
@@ -107,7 +108,7 @@ export async function POST(req, { params }) {
         );
       }
 
-      // Validate price is provided and is a number
+      // Validate price
       if (typeof item.price !== "number" || isNaN(item.price)) {
         return NextResponse.json(
           { message: `Invalid price for product ${product.name}` },
@@ -115,6 +116,7 @@ export async function POST(req, { params }) {
         );
       }
 
+      // Check stock
       if (product.quantity < item.quantity) {
         return NextResponse.json(
           {
@@ -123,6 +125,17 @@ export async function POST(req, { params }) {
           { status: 400 }
         );
       }
+
+      // Calculate profit: If sent price differs from current product price
+      let itemProfit = 0;
+      if (item.price !== product.price) {
+        // Subtract sent price from initial price * quantity
+        itemProfit = (item.price - product.initialPrice) * item.quantity;
+      } else {
+        itemProfit = (product.price - product.initialPrice) * item.quantity;
+      }
+      totalProfit += itemProfit;
+
       enrichedProducts.push({
         productId: item.productId,
         name: product.name,
@@ -148,11 +161,13 @@ export async function POST(req, { params }) {
       products: enrichedProducts,
       total,
       remainingBalance: total,
+      profit: totalProfit, // store calculated profit
     });
 
     // Update product quantities
     await Product.bulkWrite(productUpdates);
 
+    // Attach order to customer and update debt
     await Customer.findByIdAndUpdate(customerId, {
       $push: { orders: newOrder._id },
       $inc: { debt: newOrder.total },
@@ -170,3 +185,4 @@ export async function POST(req, { params }) {
     );
   }
 }
+

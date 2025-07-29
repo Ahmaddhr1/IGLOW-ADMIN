@@ -42,7 +42,7 @@ const InvoicePrintPage = () => {
   return (
     <div className="w-[58mm] text-[12px] font-mono p-3 print:w-[58mm] print:p-3">
       <div className="text-center">
-        <h2 className="font-bold text-base">Daher For Trading</h2>
+        <h2 className="font-bold text-base">I GLOW</h2>
         <p>{format(new Date(order.createdAt), 'yyyy-MM-dd HH:mm')}</p>
       </div>
 
