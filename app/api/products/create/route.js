@@ -49,6 +49,13 @@ export async function POST(req) {
       );
     }
 
+    if(parsedInitialPrice>parsedPrice) {
+       return NextResponse.json(
+        { error: "Cost Price can't be bigger than the selling price" },
+        { status: 400 }
+      );
+    }
+
     // Create the product
     const product = new Product({
       name: name.trim(),
