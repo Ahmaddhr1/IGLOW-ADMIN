@@ -68,6 +68,7 @@ const Page = () => {
         value={search}
         onChange={(e) => setSearch(e.target.value)}
       />
+      <p>{filteredProducts.length} products</p>
 
       <Table>
         <TableCaption>A list of your products</TableCaption>
