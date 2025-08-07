@@ -10,22 +10,27 @@ import Link from "next/link";
 import React, { useEffect, useState } from "react";
 import { toast } from "sonner";
 
-const fetchCustomers = async () => {
-  const { data } = await axios.get("/api/customers");
-  return Array.isArray(data) ? data : [];
-};
-
 const CustomersPage = () => {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [page, setPage] = useState(1);
+
   const queryClient = useQueryClient();
 
   const {
-    data: customers = [],
+    data,
     isLoading,
     isError,
     error,
+    refetch,
   } = useQuery({
-    queryFn: fetchCustomers,
-    queryKey: ["customers"],
+    queryKey: ["customers", page, searchTerm],
+    queryFn: async () => {
+      const res = await axios.get("/api/customers", {
+        params: { page, limit: 20, search: searchTerm },
+      });
+      return res.data;
+    },
+    keepPreviousData: true,
   });
 
   const deleteMutation = useMutation({
@@ -39,7 +44,9 @@ const CustomersPage = () => {
     },
   });
 
-  const [searchTerm, setSearchTerm] = useState("");
+  const customers = data?.customers || [];
+  const totalPages = data?.totalPages || 1;
+  const totalCount = data?.total || 0;
 
   useEffect(() => {
     if (isError) {
@@ -50,12 +57,15 @@ const CustomersPage = () => {
     }
   }, [isError, error]);
 
-  const filteredCustomers = customers.filter((customer) =>
-    customer.fullName.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  useEffect(() => {
+    const delay = setTimeout(() => {
+      refetch();
+    }, 300);
+    return () => clearTimeout(delay);
+  }, [searchTerm, page]);
 
   const handleDelete = (id, e) => {
-    e.preventDefault(); // Prevent Link navigation
+    e.preventDefault();
     if (confirm("Are you sure you want to delete this customer?")) {
       deleteMutation.mutate(id);
     }
@@ -70,7 +80,7 @@ const CustomersPage = () => {
         </Link>
       </header>
 
-      <div className="mb-6 flex items-center py-1 relative w-full max-w-md">
+      <div className="mb-4 flex items-center py-1 relative w-full max-w-md">
         <Search
           className="text-gray-500 absolute top-1/2 left-3 -translate-y-1/2"
           size="18px"
@@ -79,22 +89,29 @@ const CustomersPage = () => {
           type="text"
           placeholder="Search by name..."
           value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
+          onChange={(e) => {
+            setSearchTerm(e.target.value);
+            setPage(1);
+          }}
           className="pl-10"
         />
       </div>
 
+      <p className="mb-6">
+        Showing {customers.length} of {totalCount} customers
+      </p>
+
       {isLoading && <Loading />}
 
-      {!isLoading && filteredCustomers.length === 0 && (
+      {!isLoading && customers.length === 0 && (
         <h1 className="text-gray-600 text-center text-lg font-medium mt-10">
           No customers found.
         </h1>
       )}
 
-      {!isLoading && filteredCustomers.length > 0 && (
+      {!isLoading && customers.length > 0 && (
         <div className="grid gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-          {filteredCustomers.map((customer) => (
+          {customers.map((customer, index) => (
             <Link
               href={`/dashboard/customers/${customer._id}`}
               key={customer._id}
@@ -105,9 +122,9 @@ const CustomersPage = () => {
                 <User className="text-gray-500" size={28} />
               </div>
 
-              {/* Customer Name */}
+              {/* Customer Name + Index */}
               <h1 className="font-semibold text-center text-gray-800 mb-3">
-                {customer.fullName}
+                #{(page - 1) * 20 + index + 1} - {customer.fullName}
               </h1>
 
               {/* Delete Button */}
@@ -122,6 +139,29 @@ const CustomersPage = () => {
               </Button>
             </Link>
           ))}
+        </div>
+      )}
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-center gap-2 mt-10">
+          <Button
+            onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
+            disabled={page === 1}
+            variant="outline"
+          >
+            Previous
+          </Button>
+          <span>
+            Page {page} of {totalPages}
+          </span>
+          <Button
+            onClick={() => setPage((prev) => Math.min(prev + 1, totalPages))}
+            disabled={page === totalPages}
+            variant="outline"
+          >
+            Next
+          </Button>
         </div>
       )}
     </section>
