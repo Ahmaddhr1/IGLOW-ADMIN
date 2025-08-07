@@ -102,8 +102,7 @@ const Page = () => {
     form.price.trim() !== "" &&
     form.initialPrice.trim() !== "" &&
     form.gender.trim() !== "" &&
-    form.category.trim() !== "" &&
-    form.img.length > 0;
+    form.category.trim() !== "";
 
   return (
     <section className="section">
