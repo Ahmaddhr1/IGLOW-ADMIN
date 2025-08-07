@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import axios from "axios";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -21,20 +21,29 @@ import { Pen, Trash2, Loader2 } from "lucide-react";
 
 const Page = () => {
   const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
   const [deletingId, setDeletingId] = useState(null);
   const queryClient = useQueryClient();
 
   const {
-    data: products = [],
+    data,
     isLoading,
     isError,
+    refetch,
   } = useQuery({
-    queryKey: ["products"],
+    queryKey: ["products", page, search],
     queryFn: async () => {
-      const { data } = await axios.get("/api/products");
-      return data;
+      const res = await axios.get(`/api/products/get`, {
+        params: { page, limit: 20, search },
+      });
+      return res.data;
     },
+    keepPreviousData: true,
   });
+
+  const products = data?.products || [];
+  const totalPages = data?.totalPages || 1;
+  const totalCount = data?.total || 0;
 
   const handleDelete = async (id) => {
     setDeletingId(id);
@@ -49,9 +58,14 @@ const Page = () => {
     }
   };
 
-  const filteredProducts = products.filter((product) =>
-    product.name.toLowerCase().includes(search.toLowerCase())
-  );
+  // Refetch when search changes
+  useEffect(() => {
+    const delay = setTimeout(() => {
+      refetch();
+    }, 300); // debounce
+
+    return () => clearTimeout(delay);
+  }, [search, page]);
 
   return (
     <section className="section">
@@ -64,16 +78,23 @@ const Page = () => {
 
       <Input
         placeholder="Search products..."
-        className="mb-4 max-w-md"
+        className="mb-2 max-w-md"
         value={search}
-        onChange={(e) => setSearch(e.target.value)}
+        onChange={(e) => {
+          setSearch(e.target.value);
+          setPage(1); // reset to page 1 when searching
+        }}
       />
-      <p>{filteredProducts.length} products</p>
+
+      <p className="mb-4">
+        Showing {products.length} of {totalCount} products
+      </p>
 
       <Table>
         <TableCaption>A list of your products</TableCaption>
         <TableHeader>
           <TableRow>
+            <TableHead>#</TableHead>
             <TableHead>Name</TableHead>
             <TableHead>Quantity</TableHead>
             <TableHead>Price</TableHead>
@@ -85,19 +106,20 @@ const Page = () => {
         <TableBody>
           {isLoading ? (
             <TableRow>
-              <TableCell colSpan={6}>Loading...</TableCell>
+              <TableCell colSpan={7}>Loading...</TableCell>
             </TableRow>
           ) : isError ? (
             <TableRow>
-              <TableCell colSpan={6}>Failed to load products.</TableCell>
+              <TableCell colSpan={7}>Failed to load products.</TableCell>
             </TableRow>
-          ) : filteredProducts.length === 0 ? (
+          ) : products.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={6}>No products found.</TableCell>
+              <TableCell colSpan={7}>No products found.</TableCell>
             </TableRow>
           ) : (
-            filteredProducts.map((product) => (
+            products.map((product, index) => (
               <TableRow key={product._id}>
+                <TableCell>{(page - 1) * 20 + index + 1}</TableCell>
                 <TableCell>{product.name}</TableCell>
                 <TableCell>{product.quantity}</TableCell>
                 <TableCell>${parseFloat(product.price).toFixed(2)}</TableCell>
@@ -109,7 +131,7 @@ const Page = () => {
                 </TableCell>
                 <TableCell className="text-right space-x-2">
                   <Link href={`/dashboard/products/${product._id}`}>
-                    <Button variant="outline" className="cursor-pointer">
+                    <Button variant="outline">
                       <Pen className="mr-1 h-4 w-4" />
                       Edit
                     </Button>
@@ -117,7 +139,6 @@ const Page = () => {
                   <Button
                     variant="destructive"
                     onClick={() => handleDelete(product._id)}
-                    className="cursor-pointer"
                     disabled={deletingId === product._id}
                   >
                     {deletingId === product._id ? (
@@ -138,6 +159,26 @@ const Page = () => {
           )}
         </TableBody>
       </Table>
+
+      <div className="flex items-center justify-center gap-2 mt-6">
+        <Button
+          onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
+          disabled={page === 1}
+          variant="outline"
+        >
+          Previous
+        </Button>
+        <span>
+          Page {page} of {totalPages}
+        </span>
+        <Button
+          onClick={() => setPage((prev) => Math.min(prev + 1, totalPages))}
+          disabled={page === totalPages}
+          variant="outline"
+        >
+          Next
+        </Button>
+      </div>
     </section>
   );
 };
