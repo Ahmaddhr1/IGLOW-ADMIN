@@ -12,9 +12,11 @@ export async function GET() {
       .limit(5)
       .select("name nbOfOrders price img quantity");
 
-    return NextResponse.json({
-      success: true,
-      topProducts,
+    return NextResponse.json(
+      {
+        success: true,
+        topProducts,
+      },
       {
         status: 200,
         headers: {
@@ -22,18 +24,18 @@ export async function GET() {
           "Access-Control-Allow-Methods": "GET",
         },
       }
-    });
-} catch (error) {
-  console.error("Error fetching top products:", error);
-  return NextResponse.json(
-    { success: false, message: "Failed to fetch top products" },
-    {
-      status: 500,
-      headers: {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Methods": "GET",
-      },
-    }
-  );
-}
+    );
+  } catch (error) {
+    console.error("Error fetching top products:", error);
+    return NextResponse.json(
+      { success: false, message: "Failed to fetch top products" },
+      {
+        status: 500,
+        headers: {
+          "Access-Control-Allow-Origin": "*",
+          "Access-Control-Allow-Methods": "GET",
+        },
+      }
+    );
+  }
 }
