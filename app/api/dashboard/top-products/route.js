@@ -20,7 +20,11 @@ export async function GET() {
     console.error("Error fetching top products:", error);
     return NextResponse.json(
       { success: false, message: "Failed to fetch top products" },
-      { status: 500 }
+      { status: 500 },
+      headers: {
+      "Access-Control-Allow-Origin": "*", // or "https://yourdomain.com"
+      "Access-Control-Allow-Methods": "GET",
+    },
     );
   }
 }
