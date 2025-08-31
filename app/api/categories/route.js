@@ -42,12 +42,24 @@ export async function GET() {
 
     const categories = await Category.find().sort({ createdAt: -1 }); // Newest first
 
-    return NextResponse.json(categories, { status: 200 });
+    return NextResponse.json(categories, {
+      status: 200,
+      headers: {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET",
+      },
+    });
   } catch (err) {
     console.error("Error fetching categories:", err);
     return NextResponse.json(
       { error: "Failed to fetch categories" },
-      { status: 500 }
+      {
+        status: 500,
+        headers: {
+          "Access-Control-Allow-Origin": "*",
+          "Access-Control-Allow-Methods": "GET",
+        },
+      }
     );
   }
 }
